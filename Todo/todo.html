@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Task and Note Tracker</title>
+    <style>
+        /* Basic styling */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            text-align: center;
+        }
+        .container {
+            margin: 20px;
+            max-width: 600px;
+        }
+        .section-title {
+            margin: 20px 0;
+            font-size: 1.5em;
+        }
+        .task-list, .note-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .task-item, .note-item {
+            background: #fff;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            display: flex;
+            justify-content: space-between;
+        }
+        .completed {
+            text-decoration: line-through;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Task and Note Tracker</h1>
+    </header>
+
+    <div class="container">
+        <!-- Task Section -->
+        <h2 class="section-title">Tasks</h2>
+        <input type="text" id="new-task" placeholder="Add a new task...">
+        <button id="add-task">Add Task</button>
+        <ul id="task-list" class="task-list"></ul>
+
+        <!-- Notes Section -->
+        <h2 class="section-title">Notes</h2>
+        <textarea id="new-note" placeholder="Add a new note..."></textarea>
+        <button id="add-note">Add Note</button>
+        <ul id="note-list" class="note-list"></ul>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
