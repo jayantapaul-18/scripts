@@ -49,27 +49,31 @@ def get_bucket_tags(bucket_name):
             return None
 
 def audit_s3_buckets():
-    """Audits all S3 buckets for lifecycle policy and tags."""
+    """Audits S3 buckets that start with 'isp-' for lifecycle policy and tags."""
     buckets = get_all_buckets()
     if not buckets:
         logging.error("No buckets found or error in retrieving buckets.")
         return
 
     for bucket in buckets:
-        logging.info(f"\nAuditing bucket: {bucket}")
-        # Check lifecycle policy
-        lifecycle_policy = get_bucket_lifecycle_policy(bucket)
-        if lifecycle_policy:
-            logging.info(f"Bucket {bucket} Lifecycle Policy Details: {lifecycle_policy}")
-        else:
-            logging.info(f"Bucket {bucket} does not have a lifecycle policy.")
+        # Only audit buckets that start with 'isp-'
+        if bucket.startswith('isp-'):
+            logging.info(f"\nAuditing bucket: {bucket}")
+            # Check lifecycle policy
+            lifecycle_policy = get_bucket_lifecycle_policy(bucket)
+            if lifecycle_policy:
+                logging.info(f"Bucket {bucket} Lifecycle Policy Details: {lifecycle_policy}")
+            else:
+                logging.info(f"Bucket {bucket} does not have a lifecycle policy.")
 
-        # Check tags
-        tags = get_bucket_tags(bucket)
-        if tags:
-            logging.info(f"Bucket {bucket} Tags: {tags}")
+            # Check tags
+            tags = get_bucket_tags(bucket)
+            if tags:
+                logging.info(f"Bucket {bucket} Tags: {tags}")
+            else:
+                logging.info(f"Bucket {bucket} does not have tags.")
         else:
-            logging.info(f"Bucket {bucket} does not have tags.")
+            logging.info(f"Skipping bucket {bucket} as it does not start with 'isp-'.")
 
 if __name__ == "__main__":
     audit_s3_buckets()
