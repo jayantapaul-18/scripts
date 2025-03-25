@@ -1,0 +1,67 @@
+stages:
+  - validate
+  - audit
+  - report
+
+variables:
+  TF_ROOT: "." # Adjust if your Terraform files are in a subdirectory
+  CHECKOV_IMAGE: bridgecrewio/checkov:latest
+  AWS_REGION: "us-east-1" # Set your desired AWS region
+  ENFORCE_POLICY: "true" # Default to enforce policy
+
+validate:
+  stage: validate
+  image: hashicorp/terraform:latest
+  script:
+    - cd $TF_ROOT
+    - terraform init
+    - terraform validate
+
+audit_checkov:
+  stage: audit
+  image: $CHECKOV_IMAGE
+  script:
+    - cd $TF_ROOT
+    - checkov --directory . --framework terraform --output junitxml > checkov_report.xml
+  artifacts:
+    reports:
+      junit: checkov_report.xml
+    paths:
+      - checkov_report.xml
+
+audit_custom_policy:
+  stage: audit
+  image: python:3.9-slim
+  script:
+    - cd $TF_ROOT
+    - pip install -r requirements.txt # If you have any dependencies
+    - python custom_policy.py $ENFORCE_POLICY > custom_policy_report.txt
+  artifacts:
+    paths:
+      - custom_policy_report.txt
+
+audit_tagging_policy:
+  stage: audit
+  image: python:3.9-slim
+  script:
+    - cd $TF_ROOT
+    - pip install -r requirements.txt
+    - python tagging_policy.py > tagging_policy_report.txt
+  artifacts:
+    paths:
+      - tagging_policy_report.txt
+
+generate_report:
+  stage: report
+  image: alpine:latest
+  script:
+    - echo "Checkov Report:"
+    - cat checkov_report.xml
+    - echo "Custom Policy Report:"
+    - cat custom_policy_report.txt
+    - echo "Tagging Policy Report:"
+    - cat tagging_policy_report.txt
+  dependencies:
+    - audit_checkov
+    - audit_custom_policy
+    - audit_tagging_policy
