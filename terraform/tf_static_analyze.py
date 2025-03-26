@@ -199,53 +199,105 @@ def validate_tags(resource_tags, resource_type, resource_name, file_path):
     return violations
 
 
+# def analyze_terraform_file(file_path):
+#     """Parses a single Terraform file and validates resources."""
+#     all_violations = []
+#     try:
+#         with open(file_path, 'r', encoding='utf-8') as f:
+#             # Handle potential interpolation errors during parsing if needed,
+#             # but hcl2 usually handles syntax structure well.
+#             tf_data = hcl2.load(f)
+
+#         resources = tf_data.get('resource', [])
+#         for resource_block in resources:
+#             for resource_type, resources_in_type in resource_block.items():
+#                 if resource_type in EXCLUDED_RESOURCE_TYPES:
+#                     # print(f"DEBUG: Skipping excluded resource type: {resource_type}")
+#                     continue
+
+#                 for resource_name, resource_config_list in resources_in_type.items():
+#                     # resource_config_list is usually a list containing one dict
+#                     if not resource_config_list: continue
+#                     resource_config = resource_config_list[0]
+
+#                     # Extract tags - Handle potential variations
+#                     tags = resource_config.get('tags')
+
+#                     # Add checks for other common patterns if necessary
+#                     # e.g., tags within a 'website' block for s3, etc.
+#                     # if resource_type == 'aws_s3_bucket' and 'website' in resource_config:
+#                     #    tags = resource_config['website'][0].get('tags', tags) # Merge or prioritize
+
+#                     if tags is None:
+#                         # Treat missing tags block as empty tags for validation purposes
+#                         tags = {}
+#                         # Add a violation if *any* tags are mandatory globally or for the type
+#                         if MANDATORY_TAG_RULES.get("global") or MANDATORY_TAG_RULES.get(resource_type):
+#                              # Add a generic missing tags violation if tags block itself is absent
+#                              # This helps catch resources with no tags defined at all.
+#                              pass # The individual mandatory tag check will catch specifics
+
+
+#                     # Important: hcl2 parses tags = { ... } into a dict
+#                     # If tags = var.common_tags, tags will be the string "var.common_tags"
+#                     # This static analysis cannot resolve variables.
+#                     if isinstance(tags, dict):
+#                          violations = validate_tags(tags, resource_type, resource_name, file_path)
+#                          all_violations.extend(violations)
+#                     elif isinstance(tags, (str, list)): # Could be a variable reference or merge() result
+#                          # Cannot statically validate variable references like 'var.common_tags' or complex merges
+#                          all_violations.append({
+#                             "file": str(file_path),
+#                             "resource": f"{resource_type}.{resource_name}",
+#                             "tag_key": "N/A (Block)",
+#                             "issue": f"Tags defined using non-literal map ('{tags}'). Static analysis cannot validate.",
+#                             "suggestion": "Ensure the final resolved tags meet requirements. Consider using literal maps for static checks."
+#                          })
+#                     # Else: tags might be defined in an unsupported way or absent
+
+#     except FileNotFoundError:
+#         print(f"Error: File not found: {file_path}", file=sys.stderr)
+#     except Exception as e:
+#         print(f"Error parsing HCL file {file_path}: {e}", file=sys.stderr)
+#         # Optionally add more specific hcl2 parsing error handling
+#         all_violations.append({
+#             "file": str(file_path),
+#             "resource": "N/A",
+#             "tag_key": "N/A",
+#             "issue": f"Failed to parse file. Error: {e}",
+#             "suggestion": "Check Terraform syntax."
+#         })
+
+#     return all_violations
+
 def analyze_terraform_file(file_path):
     """Parses a single Terraform file and validates resources."""
     all_violations = []
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
-            # Handle potential interpolation errors during parsing if needed,
-            # but hcl2 usually handles syntax structure well.
+            # This is where the parsing error for invalid HCL like
+            # 'Workload = "Test No Code"' will occur.
             tf_data = hcl2.load(f)
 
+        # --- Rest of the analysis logic remains the same ---
         resources = tf_data.get('resource', [])
         for resource_block in resources:
             for resource_type, resources_in_type in resource_block.items():
                 if resource_type in EXCLUDED_RESOURCE_TYPES:
-                    # print(f"DEBUG: Skipping excluded resource type: {resource_type}")
                     continue
 
                 for resource_name, resource_config_list in resources_in_type.items():
-                    # resource_config_list is usually a list containing one dict
                     if not resource_config_list: continue
                     resource_config = resource_config_list[0]
-
-                    # Extract tags - Handle potential variations
                     tags = resource_config.get('tags')
 
-                    # Add checks for other common patterns if necessary
-                    # e.g., tags within a 'website' block for s3, etc.
-                    # if resource_type == 'aws_s3_bucket' and 'website' in resource_config:
-                    #    tags = resource_config['website'][0].get('tags', tags) # Merge or prioritize
-
                     if tags is None:
-                        # Treat missing tags block as empty tags for validation purposes
                         tags = {}
-                        # Add a violation if *any* tags are mandatory globally or for the type
-                        if MANDATORY_TAG_RULES.get("global") or MANDATORY_TAG_RULES.get(resource_type):
-                             # Add a generic missing tags violation if tags block itself is absent
-                             # This helps catch resources with no tags defined at all.
-                             pass # The individual mandatory tag check will catch specifics
 
-
-                    # Important: hcl2 parses tags = { ... } into a dict
-                    # If tags = var.common_tags, tags will be the string "var.common_tags"
-                    # This static analysis cannot resolve variables.
                     if isinstance(tags, dict):
                          violations = validate_tags(tags, resource_type, resource_name, file_path)
                          all_violations.extend(violations)
-                    elif isinstance(tags, (str, list)): # Could be a variable reference or merge() result
-                         # Cannot statically validate variable references like 'var.common_tags' or complex merges
+                    elif isinstance(tags, (str, list)):
                          all_violations.append({
                             "file": str(file_path),
                             "resource": f"{resource_type}.{resource_name}",
@@ -253,23 +305,32 @@ def analyze_terraform_file(file_path):
                             "issue": f"Tags defined using non-literal map ('{tags}'). Static analysis cannot validate.",
                             "suggestion": "Ensure the final resolved tags meet requirements. Consider using literal maps for static checks."
                          })
-                    # Else: tags might be defined in an unsupported way or absent
 
     except FileNotFoundError:
         print(f"Error: File not found: {file_path}", file=sys.stderr)
+        # Optionally add a specific violation for file not found if needed
     except Exception as e:
-        print(f"Error parsing HCL file {file_path}: {e}", file=sys.stderr)
-        # Optionally add more specific hcl2 parsing error handling
+        # --- This block handles HCL parsing errors ---
+        error_message = f"HCL Syntax Error: Failed to parse file. Details: {e}"
+        print(f"ERROR in {file_path}: {error_message}", file=sys.stderr) # Print clear error
+        # Add a structured violation record for reporting
         all_violations.append({
             "file": str(file_path),
-            "resource": "N/A",
+            "resource": "N/A - File Level Error", # Indicate error is not specific to one resource
             "tag_key": "N/A",
-            "issue": f"Failed to parse file. Error: {e}",
-            "suggestion": "Check Terraform syntax."
+            "issue": error_message,
+            "suggestion": "Check Terraform HCL syntax in the specified file, likely near the location mentioned in the details."
         })
 
     return all_violations
 
+# --- The rest of the script (imports, config, main, etc.) remains the same ---
+# ... (include the full script from the previous response here, replacing
+#      only the analyze_terraform_file function with this updated one) ...
+
+if __name__ == "__main__":
+    # Ensure the main function and argument parsing are included
+    main()
 # --- Main Execution ---
 
 def main():
