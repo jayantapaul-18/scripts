@@ -1,0 +1,47 @@
+graph LR
+    subgraph "Development"
+        A[Developer] -- 1. Push Code --> B("Version Control System - e.g., Git");
+    end
+
+    subgraph "CI/CD Platform (e.g., Jenkins, GitLab CI, GitHub Actions, AWS CodePipeline)"
+        B -- 2. Trigger Pipeline --> C{CI/CD Job Runner};
+        C -- 3. Checkout Code --> D[Workspace];
+        D -- 4. Run 'terraform init' --> E[Terraform Init];
+        E -- 5. Run 'terraform validate' --> F[Terraform Validate];
+        F -- 6. Run 'terraform plan -out=tfplan.binary' --> G[Generate Plan File];
+        G -- 7. Run 'terraform show -json tfplan.binary' --> H[Plan JSON Output];
+
+        subgraph "Policy Enforcement Stages"
+            H -- 8a. Feed Plan JSON --> I["Custom Policy Check (e.g., OPA / Sentinel)"];
+            I -- 9a. Policy Results --> J{Decision Gate 1};
+            H -- 8b. Feed Plan JSON --> K[Python Tag Validation Script];
+            K -- 9b. Tag Policy Results --> L{Decision Gate 2};
+        end
+
+        J -- 10a. Pass --> L;
+        J -- 10b. Fail --> M[Report Failure & Stop];
+        L -- 11a. Pass --> N{Optional: Manual Approval};
+        L -- 11b. Fail --> M;
+        N -- 12a. Approved --> O["Run 'terraform apply tfplan.binary'"];
+        N -- 12b. Rejected --> M;
+        O -- 13. Apply Changes --> P("Target Cloud Environment - AWS");
+        P -- 14. Infrastructure State Update --> Q[Terraform State];
+        O -- 15. Report Success --> R[Notify Users/Systems];
+        M -- 16. Report Failure --> R;
+    end
+
+    subgraph "Policy Definitions"
+        S["Policy Code Repository (e.g., Git)"] -- Pulled by --> I;
+        S -- Pulled or Embedded --> K;
+    end
+
+    subgraph "Supporting Tools/Data"
+        T["Policy Engine (e.g., OPA, Sentinel Runtime)"] -- Used by --> I;
+        U[Python Environment & Libraries] -- Used by --> K;
+        Q -- Read by --> E;
+        Q -- Updated by --> O;
+    end
+
+    style M fill:#f9d,stroke:#f00,stroke-width:2px
+    style R fill:#d9f,stroke:#90f,stroke-width:2px
+    style P fill:#ade,stroke:#048,stroke-width:2px
