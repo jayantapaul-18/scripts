@@ -1,0 +1,13 @@
+{
+  "resource_type": "aws_instance",
+  "attributes": {
+    "instance_type": "t2.micro",
+    "ami": "ami-0abcdef1234567890",
+    "tags": {
+      "Name": "webserver-prod-01",
+      "environment": "prod",
+      "owner": "devops@example.com",
+      "project": "ProjectPhoenix"
+    }
+  }
+}
