@@ -1,0 +1,8 @@
+{
+  "tags": {
+      "Name": "lambda-dev",
+      "environment": "development", // Invalid value
+      // Missing "owner"
+      "project": "BackendAPI"
+  }
+}
