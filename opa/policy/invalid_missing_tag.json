@@ -1,0 +1,12 @@
+{
+  "resource_type": "aws_s3_bucket",
+  "attributes": {
+    "bucket": "my-app-data-staging",
+    "tags": {
+      "Name": "app-data-staging",
+      "environment": "staging",
+      "owner": "devops@example.com"
+      // Missing "project" tag
+    }
+  }
+}
